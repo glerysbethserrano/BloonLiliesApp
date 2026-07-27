@@ -46,9 +46,10 @@ export default function NewDocument({ onCreated }) {
       const deposit = toMoney(doc.deposit || 0)
 
       let inserted = null
+      let doc_number = null
       for (let attempt = 0; attempt < 5; attempt++) {
         const { data: existing } = await supabase.from('documents').select('doc_number')
-        const doc_number = nextDocNumber('COT-', (existing || []).map((d) => d.doc_number))
+        doc_number = nextDocNumber('COT-', (existing || []).map((d) => d.doc_number))
 
         const { data, error: insertError } = await supabase
           .from('documents')
