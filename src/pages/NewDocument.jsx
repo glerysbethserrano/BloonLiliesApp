@@ -41,35 +41,45 @@ export default function NewDocument({ onCreated }) {
     }
     setSaving(true)
     try {
-      const { data: existing } = await supabase.from('documents').select('doc_number').eq('type', 'quote')
-      const doc_number = nextDocNumber('COT-', (existing || []).map((d) => d.doc_number))
-
       const total = toMoney(doc.total || doc.subtotal || 0)
       const subtotal = toMoney(doc.subtotal || total)
       const deposit = toMoney(doc.deposit || 0)
 
-      const { data: inserted, error: insertError } = await supabase
-        .from('documents')
-        .insert({
-          doc_number,
-          type: 'quote',
-          status: 'draft',
-          locked: false,
-          client_name: doc.client_name,
-          client_phone: doc.client_phone,
-          client_email: doc.client_email,
-          event_date: doc.event_date || null,
-          location: doc.location,
-          theme: doc.theme,
-          subtotal,
-          total,
-          deposit,
-          balance: computeBalance(total, deposit),
-          notes: doc.notes,
-        })
-        .select()
-        .single()
-      if (insertError) throw insertError
+      let inserted = null
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { data: existing } = await supabase.from('documents').select('doc_number')
+        const doc_number = nextDocNumber('COT-', (existing || []).map((d) => d.doc_number))
+
+        const { data, error: insertError } = await supabase
+          .from('documents')
+          .insert({
+            doc_number,
+            type: 'quote',
+            status: 'draft',
+            locked: false,
+            client_name: doc.client_name,
+            client_phone: doc.client_phone,
+            client_email: doc.client_email,
+            event_date: doc.event_date || null,
+            location: doc.location,
+            theme: doc.theme,
+            subtotal,
+            total,
+            deposit,
+            balance: computeBalance(total, deposit),
+            notes: doc.notes,
+          })
+          .select()
+          .single()
+
+        if (!insertError) {
+          inserted = data
+          break
+        }
+        if (insertError.code !== '23505') throw insertError
+        // else: number collision, loop again with a fresh number
+      }
+      if (!inserted) throw new Error('No se pudo generar un número de documento único.')
 
       if (items.length) {
         const rows = items.map((it, i) => ({
@@ -104,8 +114,7 @@ export default function NewDocument({ onCreated }) {
       <DocumentForm doc={doc} setDoc={setDoc} items={items} setItems={setItems} products={products} disabled={saving} />
       {error && <p className="text-magenta text-sm mt-4">{error}</p>}
       <button
-        onClick={handleGenerate}
-        disabled={saving}
+        onClick={() => !saving && handleGenerate()} disabled={saving}
         className="w-full bg-magenta text-white font-medium rounded-xl py-4 mt-6 active:scale-[0.98] transition disabled:opacity-50"
       >
         {saving ? 'Generando…' : 'Generar Cotización'}
