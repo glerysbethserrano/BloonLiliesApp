@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-cream text-ink font-body;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, select, textarea {
+  @apply bg-white border border-ink/15 rounded-xl px-4 py-3 text-base w-full outline-none transition;
+}
+input:focus, select:focus, textarea:focus {
+  @apply border-magenta ring-2 ring-magenta/20;
+}
+label {
+  @apply block text-sm font-medium text-ink/70 mb-1.5;
+}
