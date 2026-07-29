@@ -69,6 +69,16 @@ export default function DocumentView({ docId, onBack }) {
           }))
         )
       }
+
+      // Regenerate the quote PDF so it reflects these edits — otherwise
+      // "Descargar cotización" would keep serving the original, stale file.
+      if (doc.type === 'quote') {
+        const { data: freshDoc } = await supabase.from('documents').select('*').eq('id', doc.id).single()
+        const { data: freshItems } = await supabase.from('line_items').select('*').eq('document_id', doc.id).order('sort_order')
+        const { path } = await generateAndStorePdf(freshDoc, freshItems, 'quote')
+        await supabase.from('documents').update({ quote_pdf_path: path }).eq('id', doc.id)
+      }
+
       await load()
     } catch (e) {
       console.error(e)
@@ -169,7 +179,7 @@ export default function DocumentView({ docId, onBack }) {
           </button>
         )}
 
-        {doc.quote_pdf_path && (
+        {doc.type === 'quote' && doc.quote_pdf_path && (
           <button onClick={() => downloadExisting('quote')} className="w-full border border-ink/15 text-ink font-medium rounded-xl py-3.5">
             Descargar cotización (PDF)
           </button>
