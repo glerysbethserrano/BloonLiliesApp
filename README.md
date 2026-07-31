@@ -3,10 +3,6 @@
 A simple mobile-friendly app to replace the Canva template: fill a form, hit
 **Generate**, get a branded PDF, and see every past quote/invoice in one place.
 
-Everything is already built and tested (it compiles with `npm run build`).
-What's left is 100% account setup — no coding — and should take well under
-a week. Most of it is 15 minutes of clicking through Supabase and Netlify.
-
 ---
 
 ## How it works
